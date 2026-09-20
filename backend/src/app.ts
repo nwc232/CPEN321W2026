@@ -20,6 +20,12 @@ export function createApp(): Express {
   app.get('/api/name', (_req, res) => {
     res.json({ first: env.nameFirst, last: env.nameLast });
   });
+
+  app.get('/api/client-ip', (req, res) => {
+    const raw = req.socket.remoteAddress ?? '';
+    const ip = raw.startsWith('::ffff:') ? raw.slice('::ffff:'.length) : raw;
+    res.json({ ip });
+  });
   //
 
   app.use((_req, res) => {
