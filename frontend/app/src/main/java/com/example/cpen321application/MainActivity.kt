@@ -83,7 +83,7 @@ fun AppRoot() {
         Screen.ButtonThree -> ButtonScaffold(
             title = "Timer",
             onBack = { screen = Screen.Home },
-        ) { m -> PlaceholderScreen("Button 3: Timer — coming later", m) }
+        ) { m -> TimerScreen(modifier = m) }
     }
 }
 
