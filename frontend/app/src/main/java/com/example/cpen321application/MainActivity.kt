@@ -1,12 +1,14 @@
 package com.example.cpen321application
 
 import android.content.Context
+import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import android.os.Bundle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,13 +55,113 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CPEN321ApplicationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(modifier = Modifier.padding(innerPadding))
-                }
+                AppRoot()
             }
         }
     }
 }
+
+private enum class Screen { Home, ButtonOne, ButtonTwo, ButtonThree }
+
+@Composable
+fun AppRoot() {
+    var screen by remember { mutableStateOf(Screen.Home) }
+
+    when (screen) {
+        Screen.Home -> HomeScreen(onNavigate = { screen = it })
+
+        Screen.ButtonOne -> ButtonScaffold(
+            title = "Login + Server",
+            onBack = { screen = Screen.Home },
+        ) { m -> LoginScreen(modifier = m) }
+
+        Screen.ButtonTwo -> ButtonScaffold(
+            title = "Live Updates",
+            onBack = { screen = Screen.Home },
+        ) { m -> LiveUpdatesScreen(modifier = m) }
+
+        Screen.ButtonThree -> ButtonScaffold(
+            title = "Timer",
+            onBack = { screen = Screen.Home },
+        ) { m -> PlaceholderScreen("Button 3: Timer — coming later", m) }
+    }
+}
+
+@Composable
+private fun HomeScreen(onNavigate: (Screen) -> Unit) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("CPEN 321 — M1", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { onNavigate(Screen.ButtonOne) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Login + Server") }
+            Button(
+                onClick = { onNavigate(Screen.ButtonTwo) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Live Updates") }
+            Button(
+                onClick = { onNavigate(Screen.ButtonThree) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Timer") }
+        }
+    }
+}
+
+@Composable
+private fun ButtonScaffold(
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable (Modifier) -> Unit,
+) {
+    BackHandler(onBack = onBack)
+    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("← Back") }
+                Text(title, style = MaterialTheme.typography.titleMedium)
+            }
+            HorizontalDivider()
+            content(
+                Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlaceholderScreen(text: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Button 1: Login + Server info
+// ---------------------------------------------------------------------------
 
 data class ButtonOneData(
     val loggedInFirst: String,
@@ -71,31 +174,29 @@ data class ButtonOneData(
     val clientTime: String,
 )
 
-private sealed interface ScreenState {
-    data object SignedOut : ScreenState
-    data object Loading : ScreenState
-    data class SignedIn(val data: ButtonOneData) : ScreenState
-    data class Failed(val message: String) : ScreenState
+private sealed interface LoginState {
+    data object SignedOut : LoginState
+    data object Loading : LoginState
+    data class SignedIn(val data: ButtonOneData) : LoginState
+    data class Failed(val message: String) : LoginState
 }
 
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var state by remember { mutableStateOf<ScreenState>(ScreenState.SignedOut) }
+    var state by remember { mutableStateOf<LoginState>(LoginState.SignedOut) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (val s = state) {
-            is ScreenState.SignedOut -> {
+            is LoginState.SignedOut -> {
                 Button(onClick = {
                     scope.launch {
-                        state = ScreenState.Loading
+                        state = LoginState.Loading
                         state = performSignInAndFetch(context)
                     }
                 }) {
@@ -103,18 +204,18 @@ fun LoginScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            is ScreenState.Loading -> {
+            is LoginState.Loading -> {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(16.dp))
                 Text("Authenticating and contacting server…")
             }
 
-            is ScreenState.SignedIn -> InfoTable(s.data)
+            is LoginState.SignedIn -> InfoTable(s.data)
 
-            is ScreenState.Failed -> {
+            is LoginState.Failed -> {
                 Text("Sign-in failed: ${s.message}")
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { state = ScreenState.SignedOut }) {
+                Button(onClick = { state = LoginState.SignedOut }) {
                     Text("Try again")
                 }
             }
@@ -147,14 +248,14 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
-private suspend fun performSignInAndFetch(context: Context): ScreenState {
+private suspend fun performSignInAndFetch(context: Context): LoginState {
     val credential: GoogleIdTokenCredential = try {
         signInWithGoogle(context)
     } catch (e: NoCredentialException) {
-        return ScreenState.Failed("No Google account on this device.")
+        return LoginState.Failed("No Google account on this device.")
     } catch (e: GetCredentialException) {
-        return ScreenState.Failed("${e.javaClass.simpleName}: ${e.message}")
-    } ?: return ScreenState.Failed("Unexpected credential type")
+        return LoginState.Failed("${e.javaClass.simpleName}: ${e.message}")
+    } ?: return LoginState.Failed("Unexpected credential type")
 
     val base = BuildConfig.API_BASE_URL.trimEnd('/')
     return try {
@@ -165,7 +266,7 @@ private suspend fun performSignInAndFetch(context: Context): ScreenState {
         val clientTime = ZonedDateTime.now()
             .format(DateTimeFormatter.ofPattern("HH:mm:ss 'GMT'xxx"))
 
-        ScreenState.SignedIn(
+        LoginState.SignedIn(
             ButtonOneData(
                 loggedInFirst = credential.givenName ?: "",
                 loggedInLast = credential.familyName ?: "",
@@ -178,7 +279,7 @@ private suspend fun performSignInAndFetch(context: Context): ScreenState {
             )
         )
     } catch (e: Exception) {
-        ScreenState.Failed("Backend error: ${e.message ?: e.javaClass.simpleName}")
+        LoginState.Failed("Backend error: ${e.message ?: e.javaClass.simpleName}")
     }
 }
 
