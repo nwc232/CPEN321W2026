@@ -4,6 +4,7 @@ import https from 'node:https';
 
 import { createApp } from './app';
 import { env } from './config/env';
+import { attachPixelRelay } from './pixelRelay';
 
 const app = createApp();
 
@@ -18,6 +19,8 @@ const server = useHttps
       app,
     )
   : http.createServer(app);
+
+attachPixelRelay(server);
 
 server.listen(env.port, () => {
   console.log(`Server listening on ${useHttps ? 'https' : 'http'}://0.0.0.0:${env.port}`);
