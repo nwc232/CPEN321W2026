@@ -33,7 +33,8 @@ Install the following before the frontend or backend setup steps:
    ```
    Set at least:
    - `sdk.dir`: path to your Android SDK. Android Studio usually writes this the first time you open `frontend/`. On Mac it is often `sdk.dir=/Users/<username>/Library/Android/sdk`.
-   - `API_BASE_URL`: backend URL baked into the APK. Use `http://10.0.2.2:3000` for the emulator (`10.0.2.2` is the host machine). For a physical device on the same Wi-Fi, use `http://<your-lan-ip>:3000`.
+   - `API_BASE_URL`: backend URL baked into the APK. Use `https://8.235.69.138`. This is an always live cloud server so nothing needs to be ran locally on the backend.
+   - `GOOGLE_CLIENT_ID`: Google OAuth Web client ID: `114242111483-15d5lpph9bv7gncpginqv32ls8q4nf5b.apps.googleusercontent.com`
 
 
 ### Build and Run
@@ -44,16 +45,14 @@ Install the following before the frontend or backend setup steps:
 
 ### Backend Configuration
 
-Ensure the backend server is running and update the base URL in the app configuration if needed.
+The backend is deployed and running on the cloud at `https://8.235.69.138`. The app will connect to this backend automatically.
 
 ---
 ## Backend Setup
 
-You can run the backend in one of two ways:
-* Locally via Node.js 
-* Via Docker Compose
+The backend is already deployed on the cloud as mentioned, but it can be run locally. Note that it doesn't have a database or persistent state right now. 
 
-Both ways use the same `backend/.env` file (see below).
+To run the backend locally the env file must be configured properly. The deployed server is already configured.
 
 ### Environment configuration
 
@@ -64,9 +63,12 @@ cp backend/.env.example backend/.env
 ```
 
 Set at least:
-- `JWT_SECRET`: a long random string used to sign auth tokens.
-- `MONGODB_URI`: only needed for local development (default in `.env.example` assumes MongoDB on `localhost:27017`). Ignored when running via Docker Compose.
-- `PORT` (optional): defaults to `3000` if unset.
+- `PORT`: 443. If using HTTP locally, use 3000
+- `SERVER_PUBLIC_IP`: 8.235.69.138
+- `SERVER_NAME_FIRST`: set to your name or a filler
+- `SERVER_NAME_LAST`: set to your name or a filler
+- `TLS_KEY_PATH`: (optional): file path to the server's TLS private key (`server.key`). This and `TLS_CERT_PATH` need to be set to run over HTTPS. Otherwise server runs on HTTP.
+- `TLS_CERT_PATH`: (optional) file path to the server's TLS certificate (`server.crt`).
 
 
 ### Option 1: Run locally
@@ -83,44 +85,9 @@ Set at least:
    npm install
    ```
 
-2. **Development** (TypeScript with auto-reload):
-
-   ```bash
-   npm run dev
-   ```
-
-3. **Production build** (optional):
+2. **Production build**:
 
    ```bash
    npm run build
    npm start
    ```
-
-### Option 2: Run with Docker Compose
-
-**Requirements:** 
-- [Docker](https://docs.docker.com/desktop/setup/install) and [Docker Compose](https://docs.docker.com/desktop/setup/install) v2.24+
-- [curl](https://curl.se/download.html)
-
-**Setup**
-1. **Start** (from the project root):
-
-   ```bash
-   ./scripts/run-backend.sh
-   ```
-
-   Or run Compose directly:
-
-   ```bash
-   docker compose up --build -d
-   ```
-
-2. **Stop**:
-
-   ```bash
-   docker compose down
-   ```
-
-## Additional Setup
-
-_Please specify any other additional setup steps non-specific to either frontend nor backend_
