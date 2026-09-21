@@ -235,7 +235,7 @@ private fun InfoTable(data: ButtonOneData) {
         InfoRow("Client IP address", data.clientIp)
         InfoRow("Server local time", data.serverTime)
         InfoRow("Client local time", data.clientTime)
-        InfoRow("Your name (backend)", "${data.backendFirst} ${data.backendLast}")
+        InfoRow("My name (dev)", "${data.backendFirst} ${data.backendLast}")
         InfoRow("Logged-in user", "${data.loggedInFirst} ${data.loggedInLast}")
     }
 }
